@@ -1,4 +1,5 @@
 const Food = require("../models/foodModel");
+const Orders = require("../models/orderModel");
 
 // Create food Item controller
 exports.createFoodItem = async (req, res) => {
@@ -161,6 +162,73 @@ exports.deleteFoodItem = async (req, res) => {
         res.status(500).send({
             success : false,
             message : "Error in Deleting Food Item",
+            error
+        })
+    }
+}
+
+// Order place Controller
+exports.postPlaceOrder = async (req, res) => {
+    try {
+        const {cart} = req.body
+        if(!cart){
+            return res.status(400).send({
+                success : false,
+                message : "No item in Cart",
+            })
+        }
+        let total = 0;
+        cart.map((item) => {
+            total += item.foodPrice;
+        })
+
+        const orderInfo = new Orders({
+            foods : cart,
+            payment : total,
+            buyer : req.body.id
+        })
+
+        const newOrder = await orderInfo.save()
+        res.status(200).send({
+            success : true,
+            message : "Order Created Successfully",
+            newOrder
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).send({
+            success : false,
+            message : "Error while placing order",
+            error
+        })
+    }
+}
+
+
+// Order status Controller
+exports.postOrderStatus = async (req, res) => {
+    try {
+        const orderId = req.params.id
+        if(!orderId){
+            return res.status(404).send({
+                success : false,
+                message : "No order id found"
+            })
+        }
+
+        const {status} = req.body
+        const order = await Orders.findByIdAndUpdate(orderId, status, {new : true})
+        res.status(200).send({
+            success : true,
+            message : 'Order updated successfully',
+            order
+        })
+        
+    } catch (error) {
+        console.log(error)
+        res.status(500).send({
+            success : false,
+            message : "Error in Order status Api",
             error
         })
     }
